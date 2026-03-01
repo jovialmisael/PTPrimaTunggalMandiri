@@ -25,12 +25,13 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // --- AUTOMOTIVE THEME COLORS ---
-  final Color _brandRed = const Color(0xFFE50000);
+  // --- AUTOMOTIVE THEME COLORS (SALES BLUE) ---
   final Color _brandBlue = const Color(0xFF0044CC);
+  final Color _brandCyan = const Color(0xFF00BCD4);
   final Color _brandBlack = const Color(0xFF212121);
   final Color _darkAsphalt = const Color(0xFF1E1E1E);
   final Color _silverMetal = const Color(0xFFF5F5F5);
+  final Color _accentRed = const Color(0xFFE50000); // For urgent/weekend
 
   @override
   void initState() {
@@ -77,7 +78,7 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [_brandRed, _brandBlue],
+              colors: [_brandBlue, Colors.blueAccent.shade700],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -89,21 +90,35 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
       ),
       body: Stack(
         children: [
-           // Background Decoration
+           // Background Decoration (Blue Tire Track/Pattern)
           Positioned(
-            bottom: 0, right: 0,
-            child: Opacity(opacity: 0.03, child: Icon(Icons.calendar_month_rounded, size: 250, color: _brandBlack)),
+            top: 0, left: 0, right: 0,
+            height: 150,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _brandBlue,
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 20, right: -20,
+            child: Opacity(
+              opacity: 0.1,
+              child: Icon(Icons.speed_rounded, size: 150, color: Colors.white),
+            ),
           ),
 
           Column(
             children: [
               // --- 1. KALENDER SECTION ---
               Container(
-                margin: const EdgeInsets.all(20),
+                margin: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                padding: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
                 ),
                 child: TableCalendar(
                   locale: 'id_ID',
@@ -124,19 +139,19 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
                     formatButtonVisible: false,
                     titleCentered: true,
                     titleTextStyle: TextStyle(color: _brandBlack, fontSize: 16, fontWeight: FontWeight.bold),
-                    leftChevronIcon: Icon(Icons.chevron_left, color: _brandBlack),
-                    rightChevronIcon: Icon(Icons.chevron_right, color: _brandBlack),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    leftChevronIcon: Icon(Icons.chevron_left, color: _brandBlue),
+                    rightChevronIcon: Icon(Icons.chevron_right, color: _brandBlue),
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent,
                     ),
                   ),
                   calendarStyle: CalendarStyle(
                     defaultTextStyle: TextStyle(color: _brandBlack),
-                    weekendTextStyle: const TextStyle(color: Colors.redAccent),
+                    weekendTextStyle: TextStyle(color: _accentRed),
                     selectedDecoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [_brandRed, _brandBlue]),
+                      gradient: LinearGradient(colors: [_brandBlue, _brandCyan]),
                       shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: _brandBlue.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))],
                     ),
                     todayDecoration: BoxDecoration(
                       color: _brandBlue.withOpacity(0.1),
@@ -157,7 +172,11 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
                 child: Row(
                   children: [
-                    Icon(Icons.event_note_rounded, color: _brandRed, size: 20),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: _brandBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Icon(Icons.list_alt_rounded, color: _brandBlue, size: 18),
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       "Agenda: ${DateFormat('d MMMM yyyy', 'id_ID').format(_selectedDay ?? DateTime.now())}",
@@ -170,12 +189,12 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
               // --- 3. LIST VISIT SECTION ---
               Expanded(
                 child: _isLoading
-                    ? Center(child: CircularProgressIndicator(color: _brandRed))
+                    ? Center(child: CircularProgressIndicator(color: _brandBlue))
                     : _errorMessage != null
                     ? Center(child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error_outline_rounded, size: 48, color: Colors.red[200]),
+                          Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey[400]),
                           const SizedBox(height: 10),
                           Text(_errorMessage!, style: TextStyle(color: Colors.grey[600])),
                         ],
@@ -184,7 +203,7 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
                     ? Center(child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.event_busy_rounded, size: 60, color: Colors.grey[300]),
+                          Icon(Icons.free_breakfast_rounded, size: 60, color: Colors.grey[300]),
                           const SizedBox(height: 15),
                           Text("Tidak ada jadwal kunjungan", style: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.bold)),
                         ],
@@ -235,9 +254,8 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 3))],
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
         ),
         child: IntrinsicHeight(
           child: Row(
@@ -247,8 +265,8 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
               Container(
                 width: 6,
                 decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                  color: isDone ? Colors.green : _brandBlue,
+                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
                 ),
               ),
               
@@ -260,16 +278,16 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
                     children: [
                       // Time Box
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: _brandBlue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
+                          color: _silverMetal,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade300),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(time, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: _darkAsphalt)),
-                            const SizedBox(height: 2),
+                            Text(time, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: _brandBlack)),
                             Text("WIB", style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold)),
                           ],
                         ),
@@ -284,13 +302,13 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
                           children: [
                             Text(
                               customer['name'] ?? "Tanpa Nama",
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _brandBlack),
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _darkAsphalt),
                               maxLines: 1, overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                Icon(Icons.location_on_rounded, size: 14, color: Colors.grey[400]),
+                                Icon(Icons.location_on_outlined, size: 14, color: _brandBlue),
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
@@ -305,17 +323,17 @@ class _VisitScheduleScreenState extends State<VisitScheduleScreen> {
                         ),
                       ),
 
-                      // Status Badge
-                      const SizedBox(width: 8),
+                      // Right Arrow / Status Icon
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          color: isDone ? Colors.green.withOpacity(0.1) : _brandBlue.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                        child: Text(
-                          isDone ? "SELESAI" : "PENDING",
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: statusColor),
+                        child: Icon(
+                          isDone ? Icons.check_rounded : Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: isDone ? Colors.green : _brandBlue,
                         ),
                       ),
                     ],

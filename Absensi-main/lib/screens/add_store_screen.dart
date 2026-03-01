@@ -14,7 +14,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
   final ApiService _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
 
-  // --- AUTOMOTIVE THEME COLORS ---
+  // --- AUTOMOTIVE THEME COLORS (SALES BLUE) ---
   final Color _brandRed = const Color(0xFFE50000);
   final Color _brandBlue = const Color(0xFF0044CC);
   final Color _brandBlack = const Color(0xFF212121);
@@ -173,7 +173,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [_brandRed, _brandBlue],
+              colors: [_brandBlue, Colors.blueAccent.shade700],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -188,7 +188,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
           // Background Decoration
           Positioned(
             top: 0, right: 0,
-            child: Opacity(opacity: 0.05, child: Icon(Icons.store_mall_directory_rounded, size: 200, color: _brandBlack)),
+            child: Opacity(opacity: 0.05, child: Icon(Icons.store_mall_directory_rounded, size: 200, color: _brandBlue)),
           ),
           
           SingleChildScrollView(
@@ -310,7 +310,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.refresh_rounded), 
-                                  color: _brandRed,
+                                  color: _brandBlue,
                                   tooltip: "Refresh Lokasi",
                                   onPressed: _isFetchingLocation ? null : _getLocation,
                                 )
@@ -336,11 +336,12 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
         ),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: _brandRed,
+            backgroundColor: _brandBlue,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             elevation: 4,
+            shadowColor: _brandBlue.withOpacity(0.4),
           ),
           onPressed: _isSubmitting ? null : _submitData,
           child: _isSubmitting
@@ -356,7 +357,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
       padding: const EdgeInsets.only(bottom: 10, left: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: _brandRed),
+          Icon(icon, size: 18, color: _brandBlue),
           const SizedBox(width: 8),
           Text(title, style: TextStyle(color: _brandBlack, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         ],
@@ -380,7 +381,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _brandRed, width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _brandBlue, width: 1.5)),
         errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.red.shade200)),
       ),
     );
@@ -399,7 +400,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _brandRed, width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: _brandBlue, width: 1.5)),
       ),
       icon: const Icon(Icons.keyboard_arrow_down_rounded),
       items: items.map((item) => DropdownMenuItem<Map<String, dynamic>>(value: item, child: Text(getLabel(item), style: TextStyle(fontSize: 14, color: _brandBlack), overflow: TextOverflow.ellipsis))).toList(),

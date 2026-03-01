@@ -50,7 +50,6 @@ flutter_launcher_icons:
 
 flutter:
   assets:
-    - lib/assets/sbb.png
     - lib/assets/logo-1024x544.png
     - lib/assets/Gemini_Generated_Image_7461ma7461ma7461.png
     - lib/assets/spooring-berkala.jpg

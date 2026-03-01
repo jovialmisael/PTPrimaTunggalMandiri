@@ -25,6 +25,9 @@ class MobileHomeScreen extends StatefulWidget {
 
 class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
+  
+  // Key untuk mendeteksi posisi scroll header
+  final GlobalKey<NestedScrollViewState> _nestedScrollViewKey = GlobalKey<NestedScrollViewState>();
 
   late Future<List<dynamic>> _attendanceFuture;
   late Future<List<dynamic>> _leaveFuture;
@@ -96,9 +99,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
   }
 
   Future<void> _refreshData() async {
-    _loadInitialData();
-    _initDeviceState();
-    setState(() {});
+    setState(() {
+      _loadInitialData();
+      _initDeviceState();
+    });
     try {
       await Future.wait([_profileFuture, _attendanceFuture, _leaveFuture]);
     } catch (e) {
@@ -109,7 +113,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
-    String dateStr = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(now);
+    // Format tanggal terpisah untuk desain baru
+    String dayName = DateFormat('EEEE', 'id_ID').format(now).toUpperCase();
+    String fullDate = DateFormat('d MMMM yyyy', 'id_ID').format(now).toUpperCase();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA), 
@@ -160,15 +166,25 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
             child: RefreshIndicator(
               onRefresh: _refreshData,
               color: _brandRed,
-              notificationPredicate: (notification) => notification.depth <= 2,
+              notificationPredicate: (notification) {
+                if (notification.depth == 0) return true;
+                if (_nestedScrollViewKey.currentState != null && 
+                    _nestedScrollViewKey.currentState!.outerController.hasClients) {
+                   if (_nestedScrollViewKey.currentState!.outerController.offset > 0.0) {
+                     return false;
+                   }
+                }
+                return notification.depth <= 2;
+              },
               child: NestedScrollView(
+                key: _nestedScrollViewKey,
                 physics: const AlwaysScrollableScrollPhysics(),
                 headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
                   return [
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          _buildAutomotiveHeader(dateStr),
+                          _buildAutomotiveHeader(dayName, fullDate),
                           Transform.translate(
                             offset: const Offset(0, -50),
                             child: Padding(
@@ -180,7 +196,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                                   
                                   Row(
                                     children: [
-                                      Icon(Icons.dashboard_customize_rounded, color: _brandRed, size: 20),
+                                      Icon(Icons.dashboard_customize_rounded, color: _brandBlue, size: 20),
                                       const SizedBox(width: 10),
                                       Text("AKSES CEPAT", style: TextStyle(fontWeight: FontWeight.w800, color: _darkAsphalt, fontSize: 16, letterSpacing: 0.5)),
                                     ],
@@ -215,7 +231,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                               controller: _tabController,
                               indicator: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
-                                gradient: LinearGradient(colors: [_brandRed, _brandBlue]),
+                                gradient: LinearGradient(colors: [_brandBlue, const Color(0xFF003399)]),
                               ),
                               labelColor: Colors.white,
                               unselectedLabelColor: Colors.grey[600],
@@ -246,12 +262,12 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
   }
 
   // --- NEW HEADER DESIGN (BOLD & SPORTY) ---
-  Widget _buildAutomotiveHeader(String dateStr) {
+  Widget _buildAutomotiveHeader(String dayName, String fullDate) {
     return ClipPath(
       clipper: AutomotiveHeaderClipper(),
       child: Container(
         width: double.infinity,
-        height: 280, // Tinggi sedikit ditambah
+        height: 280, 
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -264,7 +280,6 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
         ),
         child: Stack(
           children: [
-            // 1. Carbon Fiber Pattern Overlay
             Positioned.fill(
               child: Opacity(
                 opacity: 0.1,
@@ -272,7 +287,6 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
               ),
             ),
             
-            // 2. Speedometer Ring Decoration (Big)
             Positioned(
               right: -50,
               top: -50,
@@ -286,7 +300,6 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
               ),
             ),
             
-            // 3. Racing Stripe Accent
             Positioned(
               left: 30,
               top: 0,
@@ -302,44 +315,71 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
               ),
             ),
 
-            // 4. Content
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 60, 24, 80),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Row: Date & Notification
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.1))
+                          borderRadius: BorderRadius.circular(8),
+                          gradient: LinearGradient(
+                            colors: [Colors.white.withOpacity(0.6), Colors.white.withOpacity(0.1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight
+                          )
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined, color: Colors.white, size: 12),
-                            const SizedBox(width: 6),
-                            Text(
-                              dateStr,
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
-                            ),
-                          ],
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _brandBlue,
+                                  borderRadius: BorderRadius.circular(4)
+                                ),
+                                child: Text(
+                                  dayName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.0
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                fullDate,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                  fontFamily: 'RobotoMono'
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      // Bisa ditambah icon notifikasi di sini jika ada
                     ],
                   ),
                   
                   const Spacer(),
                   
-                  // Main User Info
                   Row(
                     children: [
-                      // Profile Pic dengan Border Keren
                       GestureDetector(
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileScreen(token: widget.token))),
                         child: Container(
@@ -347,12 +387,12 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
-                              colors: [_brandRed, Colors.orange],
+                              colors: [_brandBlue, Colors.cyan],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             boxShadow: [
-                              BoxShadow(color: _brandRed.withOpacity(0.5), blurRadius: 12, offset: const Offset(0, 4))
+                              BoxShadow(color: _brandBlue.withOpacity(0.5), blurRadius: 12, offset: const Offset(0, 4))
                             ]
                           ),
                           child: CircleAvatar(
@@ -368,7 +408,6 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                       
                       const SizedBox(width: 16),
                       
-                      // Texts
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,17 +424,16 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                                 fontSize: 20, 
                                 fontWeight: FontWeight.w900, 
                                 letterSpacing: 0.5,
-                                fontFamily: 'Roboto' // Pastikan font default enak dibaca
+                                fontFamily: 'Roboto' 
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
-                            // Status Badge Kecil
                              Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _brandRed,
+                                color: _brandBlue,
                                 borderRadius: BorderRadius.circular(4)
                               ),
                               child: const Text("ONLINE", style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
@@ -415,36 +453,52 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
   }
 
   Widget _buildInfoCardsSection() {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: _profileFuture,
-      builder: (context, snapshot) {
-        String sisaCuti = snapshot.data?['leave_quota']?.toString() ?? "-";
-        String terlambat = snapshot.data?['debt_hours']?.toString() ?? "-";
-        
-        return FutureBuilder<List<dynamic>>(
-          future: _attendanceFuture,
-          builder: (ctx, snapAtt) {
-            String hadir = snapAtt.hasData ? snapAtt.data!.length.toString() : "-";
-            return Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 8))],
-              ),
-              child: Row(
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 8))],
+      ),
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: _profileFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+             return Center(
+               child: Column(
+                 children: [
+                   Icon(Icons.warning_amber_rounded, color: Colors.orange[300], size: 30),
+                   const SizedBox(height: 8),
+                   Text("Gagal memuat info", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                   TextButton(
+                     onPressed: _refreshData,
+                     child: Text("Refresh", style: TextStyle(color: _brandBlue)),
+                   )
+                 ],
+               ),
+             );
+          }
+
+          String sisaCuti = snapshot.data?['leave_quota']?.toString() ?? "-";
+          String terlambat = snapshot.data?['debt_hours']?.toString() ?? "-";
+          
+          return FutureBuilder<List<dynamic>>(
+            future: _attendanceFuture,
+            builder: (ctx, snapAtt) {
+              String hadir = snapAtt.hasData ? snapAtt.data!.length.toString() : "-";
+              return Row(
                 children: [
                   _buildStatItem("Sisa Cuti", sisaCuti, "Hari", Icons.event_available_rounded, Colors.orange),
                   Container(width: 1, height: 40, color: Colors.grey[200]),
                   _buildStatItem("Total Hadir", hadir, "Hari", Icons.check_circle_rounded, Colors.green),
                   Container(width: 1, height: 40, color: Colors.grey[200]),
-                  _buildStatItem("Terlambat", terlambat, "Jam", Icons.timelapse_rounded, _brandRed),
+                  _buildStatItem("Terlambat", terlambat, "Jam", Icons.timelapse_rounded, _brandBlue),
                 ],
-              ),
-            );
-          }
-        );
-      },
+              );
+            }
+          );
+        },
+      ),
     );
   }
 
@@ -470,7 +524,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
       mainAxisSpacing: 16,
       childAspectRatio: 1.5, 
       children: [
-        _buildMenuButton("ABSENSI", "Masuk/Pulang", Icons.fingerprint, Colors.blueAccent, () => Navigator.push(context, MaterialPageRoute(builder: (_) => AttendanceScreen(token: widget.token, isMobile: true)))),
+        _buildMenuButton("ABSENSI", "Masuk/Pulang", Icons.fingerprint, _brandBlue, () => Navigator.push(context, MaterialPageRoute(builder: (_) => AttendanceScreen(token: widget.token, isMobile: true)))), 
         _buildMenuButton("JADWAL", "Kunjungan Toko", Icons.map_outlined, Colors.orange, () => Navigator.push(context, MaterialPageRoute(builder: (_) => VisitScheduleScreen(token: widget.token)))),
         _buildMenuButton("TAMBAH TOKO", "Pelanggan Baru", Icons.storefront_outlined, _brandRed, () => Navigator.push(context, MaterialPageRoute(builder: (_) => AddStoreScreen(token: widget.token)))),
         _buildMenuButton("PENGAJUAN", "Cuti & Izin", Icons.assignment_outlined, _carbonGrey, () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaveScreen(token: widget.token)))),
@@ -521,11 +575,57 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
     );
   }
 
+  // --- REUSABLE ERROR WIDGET (NEW) ---
+  Widget _buildErrorWidget(String message, VoidCallback onRetry) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              "Terjadi Kesalahan",
+              style: TextStyle(fontWeight: FontWeight.bold, color: _darkAsphalt, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text("COBA LAGI"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _brandBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSliverAttendanceList() {
     return FutureBuilder<List<dynamic>>(
       future: _attendanceFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator())));
+
+        // Handle Error Explicitly
+        if (snapshot.hasError) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildErrorWidget("Gagal memuat riwayat absen.\nPeriksa koneksi internet Anda.", _refreshData),
+          );
+        }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return SliverFillRemaining(hasScrollBody: false, child: _emptyIllustration("Belum ada riwayat kunjungan"));
@@ -580,6 +680,14 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator())));
 
+        // Handle Error Explicitly
+        if (snapshot.hasError) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildErrorWidget("Gagal memuat riwayat cuti.\nPeriksa koneksi internet Anda.", _refreshData),
+          );
+        }
+
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return SliverFillRemaining(hasScrollBody: false, child: _emptyIllustration("Belum ada riwayat cuti"));
         }
@@ -606,8 +714,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: _brandRed.withOpacity(0.1), shape: BoxShape.circle),
-                        child: Icon(Icons.description_outlined, color: _brandRed, size: 20),
+                        decoration: BoxDecoration(color: _brandBlue.withOpacity(0.1), shape: BoxShape.circle),
+                        child: Icon(Icons.description_outlined, color: _brandBlue, size: 20),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -674,7 +782,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                 ElevatedButton.icon(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => PdfViewerScreen(url: item['attachment_url'], title: "Lampiran Cuti"))),
                   icon: const Icon(Icons.picture_as_pdf), label: const Text("LIHAT LAMPIRAN PDF"),
-                  style: ElevatedButton.styleFrom(backgroundColor: _brandRed, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 50)),
+                  style: ElevatedButton.styleFrom(backgroundColor: _brandBlue, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 50)),
                 )
               ]
             ],
@@ -688,7 +796,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: Row(children: [
-        Icon(icon, size: 18, color: _brandRed), const SizedBox(width: 12),
+        Icon(icon, size: 18, color: _brandBlue), const SizedBox(width: 12),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)), Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: _darkAsphalt))])
       ]),
     );

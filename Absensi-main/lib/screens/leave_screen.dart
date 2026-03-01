@@ -16,10 +16,10 @@ class LeaveScreen extends StatefulWidget {
 class _LeaveScreenState extends State<LeaveScreen> {
   final ApiService _apiService = ApiService();
 
-  // --- AUTOMOTIVE BRAND COLORS ---
+  // --- AUTOMOTIVE BRAND COLORS (DARK THEME FOR LEAVE) ---
   final Color _brandRed = const Color(0xFFD32F2F);
-  final Color _darkAsphalt = const Color(0xFF1E1E1E);
-  final Color _silverMetal = const Color(0xFFF0F0F0);
+  final Color _darkAsphalt = const Color(0xFF1E1E1E); // Main Black
+  final Color _silverMetal = const Color(0xFFF0F0F0); // Background
   final Color _chrome = const Color(0xFFE0E0E0);
 
   // --- STATE VARIABELS ---
@@ -79,7 +79,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: _brandRed, onPrimary: Colors.white, onSurface: _darkAsphalt),
+            colorScheme: ColorScheme.light(primary: _darkAsphalt, onPrimary: Colors.white, onSurface: _darkAsphalt),
             textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: _brandRed)),
           ),
           child: child!,
@@ -96,10 +96,10 @@ class _LeaveScreenState extends State<LeaveScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: _brandRed, onPrimary: Colors.white, onSurface: _darkAsphalt),
+            colorScheme: ColorScheme.light(primary: _darkAsphalt, onPrimary: Colors.white, onSurface: _darkAsphalt),
             timePickerTheme: TimePickerThemeData(
               dayPeriodTextColor: _brandRed,
-              dialHandColor: _brandRed,
+              dialHandColor: _darkAsphalt,
               dialBackgroundColor: _silverMetal,
             ),
           ),
@@ -135,7 +135,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Center(child: CircularProgressIndicator(color: _brandRed)),
+      builder: (ctx) => Center(child: CircularProgressIndicator(color: _darkAsphalt)),
     );
 
     try {
@@ -149,8 +149,6 @@ class _LeaveScreenState extends State<LeaveScreen> {
         String apiNik = profileData['nik'] ?? "-";
 
         // AMBIL SISA CUTI DARI API
-        // Pastikan key JSON sesuai dengan API Anda (misal: 'leave_remaining', 'sisa_cuti', atau 'quota')
-        // Jika null/tidak ada, kita default ke 12 (standar) atau 0
         int apiSisaCuti = 12;
         if (profileData['leave_remaining'] != null) {
           apiSisaCuti = int.parse(profileData['leave_remaining'].toString());
@@ -177,7 +175,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
             _delegationNameController.text,
             _contactAddressController.text,
             _contactPhoneController.text,
-            apiSisaCuti, // <--- 4. KIRIM SISA CUTI KE FUNGSI PDF
+            apiSisaCuti, 
           );
         } else {
           // ... (createHourlyPdf code) ...
@@ -278,83 +276,105 @@ class _LeaveScreenState extends State<LeaveScreen> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: RefreshIndicator(
-        color: _brandRed,
-        backgroundColor: Colors.white,
-        onRefresh: _refreshForm,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 25, 20, 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildTypeSelector(),
-              const SizedBox(height: 30),
+      body: Stack(
+        children: [
+          // Background Decoration (Dark Theme)
+          Positioned(
+            top: -20, right: -20,
+            child: Opacity(
+              opacity: 0.05,
+              child: Icon(Icons.assignment_outlined, size: 250, color: Colors.black),
+            ),
+          ),
+          
+          // Carbon Fiber Stripe Decoration
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            height: 10,
+            child: Container(
+              color: _brandRed,
+            ),
+          ),
 
-              // FORM CONTENT
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _formMode == 0 ? _buildCutiForm() : _buildHourlyForm(),
-              ),
-
-              const SizedBox(height: 25),
-              _buildReasonAndAttachment(),
-
-              const SizedBox(height: 40),
-
-              // TOMBOL AKSI
-              Column(
+          RefreshIndicator(
+            color: _darkAsphalt,
+            backgroundColor: Colors.white,
+            onRefresh: _refreshForm,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 25, 20, 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // TOMBOL PRINT
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: _darkAsphalt,
-                        elevation: 2,
-                        side: BorderSide(color: _darkAsphalt.withOpacity(0.3), width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: _printPdf,
-                      icon: Icon(Icons.print_outlined, color: _darkAsphalt, size: 24),
-                      label: Text("CETAK / PREVIEW PDF", style: TextStyle(color: _darkAsphalt, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                    ),
+                  _buildTypeSelector(),
+                  const SizedBox(height: 30),
+
+                  // FORM CONTENT
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _formMode == 0 ? _buildCutiForm() : _buildHourlyForm(),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 25),
+                  _buildReasonAndAttachment(),
 
-                  // TOMBOL KIRIM
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [BoxShadow(color: _brandRed.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6))],
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _brandRed,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 40),
+
+                  // TOMBOL AKSI
+                  Column(
+                    children: [
+                      // TOMBOL PRINT
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: _darkAsphalt,
+                            elevation: 2,
+                            side: BorderSide(color: _darkAsphalt.withOpacity(0.3), width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: _printPdf,
+                          icon: Icon(Icons.print_outlined, color: _darkAsphalt, size: 24),
+                          label: Text("CETAK / PREVIEW PDF", style: TextStyle(color: _darkAsphalt, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                         ),
-                        onPressed: _isLoading ? null : _submitForm,
-                        icon: _isLoading
-                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Icon(Icons.send_rounded),
-                        label: const Text("KIRIM PENGAJUAN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                       ),
-                    ),
+
+                      const SizedBox(height: 16),
+
+                      // TOMBOL KIRIM
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))],
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _darkAsphalt,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _isLoading ? null : _submitForm,
+                            icon: _isLoading
+                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.send_rounded),
+                            label: const Text("KIRIM PENGAJUAN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 30),
                 ],
               ),
-              const SizedBox(height: 30),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -545,7 +565,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-      prefixIcon: Icon(icon, color: _brandRed.withOpacity(0.7), size: 22),
+      prefixIcon: Icon(icon, color: _darkAsphalt.withOpacity(0.7), size: 22),
       border: InputBorder.none,
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _brandRed, width: 1.5)),
@@ -559,7 +579,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
     Widget content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       child: Row(children: [
-        Icon(Icons.calendar_today_rounded, size: 22, color: _brandRed.withOpacity(0.7)),
+        Icon(Icons.calendar_today_rounded, size: 22, color: _darkAsphalt.withOpacity(0.7)),
         const SizedBox(width: 12),
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

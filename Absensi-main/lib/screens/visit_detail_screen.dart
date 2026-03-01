@@ -18,12 +18,14 @@ class VisitDetailScreen extends StatefulWidget {
 class _VisitDetailScreenState extends State<VisitDetailScreen> {
   final ApiService _apiService = ApiService();
 
-  // --- AUTOMOTIVE THEME COLORS ---
-  final Color _brandRed = const Color(0xFFE50000);
+  // --- AUTOMOTIVE THEME COLORS (SALES BLUE) ---
   final Color _brandBlue = const Color(0xFF0044CC);
+  final Color _brandCyan = const Color(0xFF00BCD4);
   final Color _brandBlack = const Color(0xFF212121);
   final Color _darkAsphalt = const Color(0xFF1E1E1E);
   final Color _silverMetal = const Color(0xFFF5F5F5);
+  final Color _successGreen = const Color(0xFF2E7D32);
+  final Color _brandRed = const Color(0xFFE50000); // For end visit button
 
   bool _isLoadingCheckIn = false;
   bool _isLoadingCheckOut = false;
@@ -124,13 +126,13 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
 
         if (res['success'] == true) {
           setState(() => _hasCheckedIn = true);
-          if (mounted) _showSnack("Check-In Berhasil! Selamat bekerja.", Colors.green);
+          if (mounted) _showSnack("Check-In Berhasil! Selamat bekerja.", _successGreen);
         } else {
-          if (mounted) _showSnack(res['message'] ?? "Gagal Check-In", Colors.red);
+          if (mounted) _showSnack(res['message'] ?? "Gagal Check-In", _brandRed);
         }
       }
     } catch (e) {
-      if (mounted) _showSnack("Error: $e", Colors.red);
+      if (mounted) _showSnack("Error: $e", _brandRed);
     } finally {
       if (mounted) setState(() => _isLoadingCheckIn = false);
     }
@@ -164,15 +166,15 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
         if (res['success'] == true) {
           setState(() => _hasCheckedOut = true);
           if (mounted) {
-            _showSnack("Kunjungan Selesai! Terima kasih.", Colors.green);
+            _showSnack("Kunjungan Selesai! Terima kasih.", _successGreen);
             Navigator.pop(context); 
           }
         } else {
-          if (mounted) _showSnack(res['message'] ?? "Gagal Check-Out", Colors.red);
+          if (mounted) _showSnack(res['message'] ?? "Gagal Check-Out", _brandRed);
         }
       }
     } catch (e) {
-      if (mounted) _showSnack("Error: $e", Colors.red);
+      if (mounted) _showSnack("Error: $e", _brandRed);
     } finally {
       if (mounted) setState(() => _isLoadingCheckOut = false);
     }
@@ -189,8 +191,7 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
       if (await canLaunchUrl(googleMapsUrl)) {
         await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
       } else {
-         // Fallback usually not needed for external application mode if app installed, but good practice
-        if (mounted) _showSnack("Tidak dapat membuka Google Maps", Colors.red);
+        if (mounted) _showSnack("Tidak dapat membuka Google Maps", _brandRed);
       }
     } catch (e) {
       debugPrint(e.toString());
@@ -209,7 +210,7 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [_brandRed, _brandBlue],
+              colors: [_brandBlue, Colors.blueAccent.shade700],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -219,121 +220,139 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
         leading: const BackButton(color: Colors.white),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- 1. INFO CARD ---
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   Container(
-                     padding: const EdgeInsets.all(20),
-                     decoration: BoxDecoration(
-                       color: _brandBlue.withOpacity(0.05),
-                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                     ),
-                     child: Row(
-                       children: [
-                         Container(
-                           padding: const EdgeInsets.all(10),
-                           decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                           child: Icon(Icons.storefront_rounded, color: _brandBlue, size: 24),
-                         ),
-                         const SizedBox(width: 15),
-                         Expanded(
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Text(
-                                 widget.visitData['customer_name'] ?? "Tanpa Nama", 
-                                 style: TextStyle(color: _brandBlack, fontSize: 18, fontWeight: FontWeight.w900)
-                               ),
-                               const SizedBox(height: 4),
-                               Text(
-                                 "Jadwal: ${widget.visitData['time'] ?? '--:--'} WIB", 
-                                 style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.bold)
-                               ),
-                             ],
-                           ),
-                         ),
-                       ],
-                     ),
-                   ),
-                   Padding(
-                     padding: const EdgeInsets.all(20),
-                     child: Column(
-                       children: [
-                        _detailRow(Icons.location_on_rounded, "Alamat Lengkap", widget.visitData['address'] ?? "-"),
-                        const Divider(height: 24),
-                        _detailRow(Icons.person_pin_rounded, "Kontak (PIC)", widget.visitData['contact'] ?? "-"),
-                        const Divider(height: 24),
-                        _detailRow(Icons.notes_rounded, "Catatan Kunjungan", widget.visitData['notes'] ?? "-"),
-                       ],
-                     ),
-                   )
-                ],
-              ),
+      body: Stack(
+        children: [
+          // Background Decoration
+          Positioned(
+            top: -50, right: -50,
+            child: Opacity(
+              opacity: 0.05,
+              child: Icon(Icons.location_on_outlined, size: 300, color: _brandBlue),
             ),
-            
-            const SizedBox(height: 25),
+          ),
 
-            // --- 2. NAVIGASI MAPS ---
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: _brandBlue,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: _brandBlue, width: 1.5)),
-                ),
-                onPressed: () => _openGoogleMaps(widget.visitData['latitude']?.toString(), widget.visitData['longitude']?.toString()),
-                icon: const Icon(Icons.map_rounded),
-                label: const Text("NAVIGASI KE LOKASI (MAPS)", style: TextStyle(fontWeight: FontWeight.w900)),
-              ),
-            ),
-            const SizedBox(height: 25),
-
-            // --- 3. ACTION BUTTONS (GRID) ---
-            Row(
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // CLOCK IN BUTTON
-                Expanded(
-                  child: _buildActionButton(
-                    label: _hasCheckedIn ? "SEDANG VISIT" : "MULAI VISIT",
-                    icon: Icons.login_rounded,
-                    color: _hasCheckedIn ? Colors.grey : Colors.green,
-                    isLoading: _isLoadingCheckIn,
-                    onPressed: (_isLoadingCheckIn || _hasCheckedIn) ? null : _handleCheckIn,
+                // --- 1. INFO CARD ---
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                       Container(
+                         padding: const EdgeInsets.all(20),
+                         decoration: BoxDecoration(
+                           gradient: LinearGradient(colors: [_brandBlue.withOpacity(0.1), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                         ),
+                         child: Row(
+                           children: [
+                             Container(
+                               padding: const EdgeInsets.all(12),
+                               decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: _brandBlue.withOpacity(0.1), blurRadius: 8)]),
+                               child: Icon(Icons.storefront_rounded, color: _brandBlue, size: 28),
+                             ),
+                             const SizedBox(width: 15),
+                             Expanded(
+                               child: Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                   Text(
+                                     widget.visitData['customer_name'] ?? "Tanpa Nama", 
+                                     style: TextStyle(color: _brandBlack, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0.5)
+                                   ),
+                                   const SizedBox(height: 4),
+                                   Container(
+                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                     decoration: BoxDecoration(color: _brandBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                                     child: Text(
+                                       "Jadwal: ${widget.visitData['time'] ?? '--:--'} WIB", 
+                                       style: TextStyle(color: _brandBlue, fontSize: 12, fontWeight: FontWeight.bold)
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),
+                       Padding(
+                         padding: const EdgeInsets.all(20),
+                         child: Column(
+                           children: [
+                            _detailRow(Icons.location_on_outlined, "Alamat Lengkap", widget.visitData['address'] ?? "-"),
+                            const Divider(height: 24),
+                            _detailRow(Icons.person_pin_circle_outlined, "Kontak (PIC)", widget.visitData['contact'] ?? "-"),
+                            const Divider(height: 24),
+                            _detailRow(Icons.sticky_note_2_outlined, "Catatan Kunjungan", widget.visitData['notes'] ?? "-"),
+                           ],
+                         ),
+                       )
+                    ],
                   ),
                 ),
-                const SizedBox(width: 15),
-                // CLOCK OUT BUTTON
-                Expanded(
-                   child: _buildActionButton(
-                    label: _hasCheckedOut ? "SELESAI" : "AKHIRI VISIT",
-                    icon: Icons.check_circle_outline_rounded,
-                    color: (_hasCheckedOut || !_hasCheckedIn) ? Colors.grey : _brandRed,
-                    isLoading: _isLoadingCheckOut,
-                    onPressed: (_isLoadingCheckOut || _hasCheckedOut || !_hasCheckedIn) ? null : _handleCheckOut,
+                
+                const SizedBox(height: 25),
+
+                // --- 2. NAVIGASI MAPS ---
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: _brandBlue,
+                      elevation: 2,
+                      shadowColor: _brandBlue.withOpacity(0.2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: _brandBlue, width: 1.5)),
+                    ),
+                    onPressed: () => _openGoogleMaps(widget.visitData['latitude']?.toString(), widget.visitData['longitude']?.toString()),
+                    icon: const Icon(Icons.map_rounded),
+                    label: const Text("NAVIGASI KE LOKASI (MAPS)", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                   ),
                 ),
+                const SizedBox(height: 25),
+
+                // --- 3. ACTION BUTTONS (GRID) ---
+                Row(
+                  children: [
+                    // CLOCK IN BUTTON
+                    Expanded(
+                      child: _buildActionButton(
+                        label: _hasCheckedIn ? "SEDANG VISIT" : "MULAI VISIT",
+                        icon: Icons.login_rounded,
+                        color: _hasCheckedIn ? Colors.grey : _successGreen,
+                        isLoading: _isLoadingCheckIn,
+                        onPressed: (_isLoadingCheckIn || _hasCheckedIn) ? null : _handleCheckIn,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    // CLOCK OUT BUTTON
+                    Expanded(
+                       child: _buildActionButton(
+                        label: _hasCheckedOut ? "SELESAI" : "AKHIRI VISIT",
+                        icon: Icons.check_circle_outline_rounded,
+                        color: (_hasCheckedOut || !_hasCheckedIn) ? Colors.grey : _brandRed,
+                        isLoading: _isLoadingCheckOut,
+                        onPressed: (_isLoadingCheckOut || _hasCheckedOut || !_hasCheckedIn) ? null : _handleCheckOut,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 40),
               ],
             ),
-            
-            const SizedBox(height: 40),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -348,6 +367,7 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
           disabledForegroundColor: Colors.grey[500],
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: onPressed == null ? 0 : 4,
+          shadowColor: color.withOpacity(0.4),
         ),
         onPressed: onPressed,
         child: isLoading
@@ -357,7 +377,7 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
                 children: [
                   Icon(icon, color: Colors.white, size: 22),
                   const SizedBox(height: 4),
-                  Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                  Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5)),
                 ],
               ),
       ),
@@ -368,11 +388,11 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.grey[400], size: 20),
+        Icon(icon, color: Colors.grey[400], size: 22),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.bold)), 
-          const SizedBox(height: 2), 
+          const SizedBox(height: 4), 
           Text(value, style: TextStyle(color: _brandBlack, fontSize: 14, fontWeight: FontWeight.w600, height: 1.3))
         ])),
       ],

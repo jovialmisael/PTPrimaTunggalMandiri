@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_services.dart';
 import 'login_screen.dart';
+import 'dart:math' as math;
 
 class ProfileScreen extends StatefulWidget {
   final String token;
@@ -14,61 +15,25 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   final ApiService _apiService = ApiService();
-
-  // Variable untuk menampung Future profile
   late Future<Map<String, dynamic>?> _profileFuture;
 
-  // Animation Controllers
-  late AnimationController _headerController;
-  late Animation<double> _headerFade;
-
-  late AnimationController _listController;
-
-  // Automotive Brand Colors
-  final Color _brandRed = const Color(0xFFD32F2F);
-  final Color _darkAsphalt = const Color(0xFF1E1E1E); // Warna Ban/Dashboard
-  final Color _silverMetal = const Color(0xFFF0F0F0); // Warna Body Silver
-  final Color _chrome = const Color(0xFFE0E0E0);
+  // Colors - Automotive Theme (Balanced)
+  final Color _brandRed = const Color(0xFFE50000);
+  final Color _brandBlue = const Color(0xFF0044CC);
+  final Color _darkAsphalt = const Color(0xFF1E1E1E); // Header Dark
+  final Color _silverMetal = const Color(0xFFF5F5F5); // Body Light
+  final Color _chromeWhite = const Color(0xFFFFFFFF);
 
   @override
   void initState() {
     super.initState();
     _refreshData();
-
-    // Setup Header Animation
-    _headerController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _headerFade = CurvedAnimation(parent: _headerController, curve: Curves.easeOut);
-
-    // Setup List Animation (Staggered)
-    _listController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    // Start Animations
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) {
-        _headerController.forward();
-        _listController.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _headerController.dispose();
-    _listController.dispose();
-    super.dispose();
   }
 
   Future<void> _refreshData() async {
     setState(() {
       _profileFuture = _apiService.getProfile(widget.token);
     });
-    // Menunggu future selesai untuk refresh indicator
     try {
       await _profileFuture;
     } catch (e) {
@@ -76,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  // --- FUNGSI EDIT DATA ---
+  // --- EDIT DATA DIALOG ---
   void _showEditDialog(String title, String fieldName, String currentValue) {
     TextEditingController controller = TextEditingController(text: currentValue == "-" ? "" : currentValue);
 
@@ -97,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 borderSide: BorderSide(color: _brandRed, width: 2),
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: _chromeWhite,
             ),
           ),
           actions: [
@@ -108,13 +73,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _brandRed,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
-                Navigator.pop(context); // Tutup dialog
+                Navigator.pop(context);
                 await _saveData(fieldName, controller.text);
               },
-              child: const Text("Simpan", style: TextStyle(color: Colors.white)),
+              child: const Text("Simpan"),
             ),
           ],
         );
@@ -138,19 +104,19 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  // --- FUNGSI LOGOUT ---
   Future<void> _logout() async {
     bool confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Konfirmasi Keluar"),
-        content: const Text("Apakah Anda yakin ingin keluar dari aplikasi?"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text("KONFIRMASI", style: TextStyle(color: _brandRed, fontWeight: FontWeight.bold)),
+        content: const Text("Apakah Anda yakin ingin keluar?", style: TextStyle(color: Colors.black87)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal", style: TextStyle(color: Colors.grey))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _brandRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            style: ElevatedButton.styleFrom(backgroundColor: _brandRed, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Ya, Keluar", style: TextStyle(color: Colors.white)),
+            child: const Text("KELUAR"),
           ),
         ],
       ),
@@ -169,317 +135,240 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _silverMetal,
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: _brandRed,
-        backgroundColor: Colors.white,
-        child: FutureBuilder<Map<String, dynamic>?>(
-          future: _profileFuture,
-          builder: (context, snapshot) {
-            // Tampilan Loading Awal (bukan saat refresh)
-            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-              return Center(child: CircularProgressIndicator(color: _brandRed));
-            }
-
-            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-              return Center(
-                child: SingleChildScrollView( // Agar bisa pull-to-refresh saat error
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 60, color: Colors.grey[300]),
-                      const SizedBox(height: 10),
-                      Text("Gagal memuat profil", style: TextStyle(color: Colors.grey[600])),
-                      TextButton(onPressed: _refreshData, child: Text("Coba Lagi", style: TextStyle(color: _brandRed)))
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            var data = snapshot.data!;
-            // Parse Data
-            String name = data['name'] ?? "-";
-            String nik = data['nik'] ?? "-";
-            String email = data['email'] ?? "-";
-            String phone = data['phone'] ?? "-";
-            String role = data['role'] ?? "Staff";
-            String branch = (data['branch'] != null) ? data['branch']['name'] : "-";
-            String position = (data['position'] != null) ? data['position']['name'] : "-";
-            String homebase = (data['homebase'] != null) ? data['homebase']['name'] : "-";
-            String joinDate = data['join_date'] ?? "-";
-
-            return Stack(
-              children: [
-                // 1. BACKGROUND LAYER (Header + Textured Body)
-                Column(
+      body: Stack(
+        children: [
+          // 1. BACKGROUND LAYERS
+          Column(
+            children: [
+              // HEADER IMAGE & GRADIENT
+              Container(
+                height: 320, // Tall header for image
+                width: double.infinity,
+                color: _darkAsphalt,
+                child: Stack(
                   children: [
-                    // HEADER AREA
-                    Container(
-                      height: 240,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                          color: _darkAsphalt,
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))
-                          ]
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Opacity(
-                              opacity: 0.35,
-                              child: Image.asset(
-                                'lib/assets/Gemini_Generated_Image_7461ma7461ma7461.png',
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(),
-                              ),
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.2),
-                                    Colors.black.withOpacity(0.8),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Aksen Racing Stripe Atas
-                          Positioned(
-                            right: 40,
-                            top: -20,
-                            child: Transform.rotate(
-                              angle: -0.2,
-                              child: Container(
-                                width: 15,
-                                height: 350,
-                                decoration: BoxDecoration(
-                                  color: _brandRed.withOpacity(0.5),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                    // Background Image
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.6,
+                        child: Image.asset(
+                          'lib/assets/Gemini_Generated_Image_7461ma7461ma7461.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => Image.asset('lib/assets/spooring-berkala.jpg', fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: _darkAsphalt)),
+                        ),
                       ),
                     ),
-                    // BODY AREA (Textured with Neat Tire Tracks)
-                    Expanded(
+                    // Gradient Overlay (To make text pop)
+                    Positioned.fill(
                       child: Container(
-                        width: double.infinity,
-                        color: _silverMetal,
-                        child: Stack(
-                          children: [
-                            // 1. VERTICAL TIRE TRACK (LEFT) - Parallel and Neat
-                            Positioned(
-                              left: 20, top: 0, bottom: 0,
-                              child: _buildTireTrack(isHorizontal: false),
-                            ),
-
-                            // 2. HORIZONTAL TIRE TRACK (LOWER MIDDLE) - Parallel and Neat
-                            Positioned(
-                              left: 0, right: 0, bottom: 100,
-                              child: _buildTireTrack(isHorizontal: true),
-                            ),
-
-                            // Watermark Logo
-                            Positioned(
-                              bottom: 30,
-                              right: 20,
-                              child: Opacity(
-                                opacity: 0.1,
-                                child: Image.asset(
-                                  'lib/assets/logo-1024x544.png',
-                                  width: 200,
-                                  errorBuilder: (context, error, stackTrace) => Container(),
-                                ),
-                              ),
-                            ),
-                          ],
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.3),
+                              Colors.black.withOpacity(0.8),
+                              _silverMetal, // Blend into body
+                            ],
+                            stops: const [0.0, 0.7, 1.0],
+                          ),
                         ),
+                      ),
+                    ),
+                    // Carbon Fiber Texture Overlay (Subtle)
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.1,
+                        child: CustomPaint(painter: CarbonFiberPainter()),
                       ),
                     ),
                   ],
                 ),
-
-                // 2. CONTENT LAYER
-                SafeArea(
-                  child: Column(
+              ),
+              // BODY TEXTURE (Tire Tracks)
+              Expanded(
+                child: Container(
+                  color: _silverMetal,
+                  child: Stack(
                     children: [
-                      // AppBar Custom
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            const Text("PROFIL SAYA", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                          ],
+                      // Modern Speed Shape (Subtle Geometric) instead of Tire Tracks
+                      Positioned(
+                        top: 0, right: 0,
+                        child: CustomPaint(
+                          size: const Size(200, 300),
+                          painter: SpeedShapePainter(color: Colors.black.withOpacity(0.03)),
                         ),
                       ),
-
-                      Expanded(
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(), // PENTING: Agar bisa refresh meski konten sedikit
-                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-                          children: [
-
-                            // --- KARTU ID KARYAWAN ---
-                            FadeTransition(
-                              opacity: _headerFade,
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, 8)),
-                                  ],
-                                  border: Border.all(color: Colors.white, width: 1),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(3),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: _brandRed, width: 2.5),
-                                      ),
-                                      child: CircleAvatar(
-                                        radius: 35,
-                                        backgroundColor: _chrome,
-                                        child: Text(
-                                          name.isNotEmpty ? name[0] : "?",
-                                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _darkAsphalt),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            name.toUpperCase(),
-                                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _darkAsphalt),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            position,
-                                            style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: _darkAsphalt,
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              "NIK: $nik",
-                                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 35),
-
-                            // --- SEKSI KONTAK ---
-                            _buildSectionHeader("KONTAK & AKUN", Icons.perm_contact_calendar_outlined),
-                            _buildInfoCard([
-                              _buildItemRow("Email", email, icon: Icons.email_outlined, isEditable: true, onTap: () => _showEditDialog("Email", "email", email)),
-                              _buildDivider(),
-                              _buildItemRow("Telepon", phone, icon: Icons.phone_android_outlined, isEditable: true, onTap: () => _showEditDialog("Telepon", "phone", phone)),
-                            ]),
-
-                            const SizedBox(height: 25),
-
-                            // --- SEKSI DATA KARYAWAN ---
-                            _buildSectionHeader("DATA PERUSAHAAN", Icons.business_center_outlined),
-                            _buildInfoCard([
-                              _buildItemRow("Cabang", branch, icon: Icons.store_outlined),
-                              _buildDivider(),
-                              _buildItemRow("Homebase", homebase, icon: Icons.map_outlined),
-                              _buildDivider(),
-                              _buildItemRow("Bergabung", joinDate, icon: Icons.calendar_today_outlined),
-                              _buildDivider(),
-                              _buildItemRow("Status", role, icon: Icons.admin_panel_settings_outlined),
-                            ]),
-
-                            const SizedBox(height: 40),
-
-                            // --- TOMBOL LOGOUT ---
-                            Container(
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(color: _brandRed.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
-                                  ]
-                              ),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _brandRed,
-                                  foregroundColor: Colors.white,
-                                  minimumSize: const Size(double.infinity, 55),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  elevation: 0,
-                                ),
-                                onPressed: _logout,
-                                child: const Text("KELUAR APLIKASI", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 2.0)),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
+                      // Watermark Logo Bottom Left
+                      Positioned(
+                        bottom: -30, left: -40,
+                        child: Opacity(
+                          opacity: 0.05,
+                          child: Image.asset('lib/assets/logo-1024x544.png', width: 300),
                         ),
                       ),
                     ],
                   ),
                 ),
+              ),
+            ],
+          ),
+
+          // 2. SCROLLABLE CONTENT
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom AppBar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text("PROFIL PENGEMUDI", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.2)),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshData,
+                    color: _brandRed,
+                    child: FutureBuilder<Map<String, dynamic>?>(
+                      future: _profileFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                          return Center(child: CircularProgressIndicator(color: _brandRed));
+                        }
+                        
+                        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                          return _buildErrorState();
+                        }
+
+                        var data = snapshot.data!;
+                        String name = data['name'] ?? "User";
+                        String role = data['position'] != null ? data['position']['name'] : "Staff";
+                        String nik = data['nik'] ?? "-";
+                        String email = data['email'] ?? "-";
+                        String phone = data['phone'] ?? "-";
+
+                        return SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 10),
+                              // --- PROFILE CARD (FLOATING) ---
+                              Stack(
+                                alignment: Alignment.topCenter,
+                                children: [
+                                  // Card Background
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 50),
+                                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 10))],
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(name.toUpperCase(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: _darkAsphalt), textAlign: TextAlign.center),
+                                        const SizedBox(height: 5),
+                                        Text(role, style: TextStyle(fontSize: 14, color: _brandRed, fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 10),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(color: _silverMetal, borderRadius: BorderRadius.circular(8)),
+                                          child: Text("NIK: $nik", style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Avatar (Overlapping)
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white, // Border putih
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 45,
+                                      backgroundColor: _darkAsphalt,
+                                      child: Text(
+                                        name.isNotEmpty ? name[0] : "?",
+                                        style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 25),
+
+                              // --- STATS ROW ---
+                              Row(
+                                children: [
+                                  _buildStatCard("Sisa Cuti", data['leave_quota']?.toString() ?? "0", "Hari", Colors.orange),
+                                  const SizedBox(width: 15),
+                                  _buildStatCard("Terlambat", data['debt_hours']?.toString() ?? "0", "Jam", _brandRed),
+                                ],
+                              ),
+
+                              const SizedBox(height: 25),
+
+                              // --- CONTACT INFO ---
+                              _buildSectionHeader("KONTAK PRIBADI", Icons.person_pin_circle_outlined),
+                              _buildInfoTile(Icons.email_outlined, "Email", email, isEditable: true, onTap: () => _showEditDialog("Email", "email", email)),
+                              _buildInfoTile(Icons.phone_iphone_rounded, "Telepon", phone, isEditable: true, onTap: () => _showEditDialog("Telepon", "phone", phone)),
+
+                              const SizedBox(height: 20),
+
+                              // --- COMPANY INFO ---
+                              _buildSectionHeader("DATA PERUSAHAAN", Icons.domain_rounded),
+                              _buildInfoTile(Icons.store_mall_directory_outlined, "Cabang", data['branch'] != null ? data['branch']['name'] : "-"),
+                              _buildInfoTile(Icons.map_outlined, "Homebase", data['homebase'] != null ? data['homebase']['name'] : "-"),
+                              _buildInfoTile(Icons.calendar_today_rounded, "Bergabung", data['join_date'] ?? "-"),
+
+                              const SizedBox(height: 35),
+
+                              // --- LOGOUT BUTTON ---
+                              Container(
+                                width: double.infinity,
+                                height: 55,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  gradient: LinearGradient(colors: [_brandRed, _brandBlue]),
+                                  boxShadow: [BoxShadow(color: _brandBlue.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                                ),
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                  ),
+                                  onPressed: _logout,
+                                  icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                                  label: const Text("KELUAR APLIKASI", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white, letterSpacing: 1.0)),
+                                ),
+                              ),
+                              const SizedBox(height: 30),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // --- WIDGET HELPER ---
-
-  Widget _buildTireTrack({required bool isHorizontal}) {
-    return Opacity(
-      opacity: 0.05,
-      child: isHorizontal
-          ? Column(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(4, (index) => Container(
-          margin: const EdgeInsets.symmetric(vertical: 2.5),
-          height: 3, width: 1000, // Long horizontal lines
-          color: _darkAsphalt,
-        )),
-      )
-          : Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(4, (index) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2.5),
-          width: 3, height: 1000, // Long vertical lines
-          color: _darkAsphalt,
-        )),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -489,70 +378,138 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: _brandRed.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-            child: Icon(icon, size: 18, color: _brandRed),
-          ),
+          Icon(icon, size: 20, color: _brandRed),
           const SizedBox(width: 10),
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey[800], letterSpacing: 1.0)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _darkAsphalt, letterSpacing: 0.8)),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white, width: 1),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(children: children),
-      ),
-    );
-  }
-
-  Widget _buildItemRow(String label, String value, {required IconData icon, bool isEditable = false, VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        child: Row(
+  Widget _buildStatCard(String label, String value, String unit, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4))],
+          border: Border(left: BorderSide(color: color, width: 5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _silverMetal,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: _darkAsphalt.withOpacity(0.7), size: 22),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  const SizedBox(height: 4),
-                  Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87)),
-                ],
-              ),
-            ),
-            if (isEditable)
-              Icon(Icons.edit_square, size: 20, color: _brandRed.withOpacity(0.6)),
+            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _darkAsphalt)),
+            const SizedBox(height: 4),
+            Text("$label ($unit)", style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: _silverMetal, indent: 70);
+  Widget _buildInfoTile(IconData icon, String title, String value, {bool isEditable = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: _silverMetal, borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: _darkAsphalt.withOpacity(0.7), size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(value, style: TextStyle(color: _darkAsphalt, fontWeight: FontWeight.bold, fontSize: 15)),
+                ],
+              ),
+            ),
+            if (isEditable)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: _brandRed.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(Icons.edit, size: 16, color: _brandRed),
+              ),
+          ],
+        ),
+      ),
+    );
   }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: _brandRed, size: 50),
+          const SizedBox(height: 10),
+          Text("Gagal memuat profil", style: const TextStyle(color: Colors.grey)),
+          TextButton(
+            onPressed: _refreshData,
+            child: Text("Coba Lagi", style: TextStyle(color: _brandRed)),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+// --- NEW MODERN PAINTERS ---
+
+class SpeedShapePainter extends CustomPainter {
+  final Color color;
+  SpeedShapePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    
+    // Abstract geometric shape (Modern Speed Design)
+    final path = Path();
+    path.moveTo(size.width, 0);
+    path.lineTo(size.width * 0.2, 0);
+    path.lineTo(size.width, size.height * 0.6);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class CarbonFiberPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+    
+    const double sizeSquare = 4.0;
+    const double spacing = 8.0;
+
+    for (double y = 0; y < size.height; y += spacing) {
+      for (double x = 0; x < size.width; x += spacing) {
+        if ((x ~/ spacing) % 2 == (y ~/ spacing) % 2) {
+           canvas.drawRect(Rect.fromLTWH(x, y, sizeSquare, sizeSquare), paint);
+        }
+      }
+    }
+  }
+  @override bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
