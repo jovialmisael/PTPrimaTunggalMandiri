@@ -100,47 +100,47 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   void _setupAnimations() {
     _mainController = AnimationController(
-      duration: const Duration(milliseconds: 3000), // Diperlama jadi 3 Detik (Sangat Lambat & Halus)
+      duration: const Duration(milliseconds: 1500), // Durasi dikurangi agar lebih responsif
       vsync: this,
     );
 
-    // 1. Logo Muncul Perlahan (0.0 - 0.5)
-    _logoScaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+    // 1. Logo: Hero akan menangani transisi, jadi kita biarkan statis (Scale 1.0, Opacity 1.0)
+    // atau animasi sangat halus jika Hero tidak bekerja sempurna.
+    _logoScaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _mainController,
-        // easeOutQuart = Rem halus di akhir
         curve: const Interval(0.0, 0.5, curve: Curves.easeOutQuart),
       ),
     );
-    _logoOpacityAnimation = CurvedAnimation(
-      parent: _mainController,
-      curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+    _logoOpacityAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _mainController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+      ),
     );
 
-    // 2. Garis Bergerak (0.3 - 0.7)
+    // 2. Garis Bergerak (0.2 - 0.6) - Lebih cepat
     _lineAnimation = CurvedAnimation(
       parent: _mainController,
-      // easeOutCubic = Lambat tapi konsisten
-      curve: const Interval(0.3, 0.7, curve: Curves.easeOutCubic),
+      curve: const Interval(0.2, 0.6, curve: Curves.easeOutCubic),
     );
 
-    // 3. Form Input Muncul (0.5 - 0.9)
+    // 3. Form Input Muncul (0.4 - 1.0) - Muncul setelah logo settle
     _formFadeAnimation = CurvedAnimation(
       parent: _mainController,
-      curve: const Interval(0.5, 0.9, curve: Curves.easeOutQuart),
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOutQuart),
     );
     _formSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.08), // Geser sedikit saja agar tidak pusing
+      begin: const Offset(0, 0.08), 
       end: Offset.zero,
     ).animate(_formFadeAnimation);
 
-    // 4. Background Elemen (Fade Pelan Sepanjang Animasi 0.0 - 1.0)
+    // 4. Background Elemen
     _bgElementsFade = CurvedAnimation(
       parent: _mainController,
       curve: const Interval(0.0, 1.0, curve: Curves.easeOut),
     );
 
-    // Mulai animasi segera setelah build frame pertama selesai
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _mainController.forward();
     });
@@ -158,21 +158,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _navigateBasedOnRole(String token, String name, bool isMobile) {
     if (!mounted) return;
 
-    // Gunakan transisi halus
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
         isMobile ? MobileHomeScreen(token: token, name: name) : HomeScreen(token: token, name: name),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          var curve = Curves.easeInOutCubic; // Kurva lebih halus
-          var tween = Tween(begin: const Offset(0.0, 0.05), end: Offset.zero).chain(CurveTween(curve: curve)); // Slide halus vertikal sedikit
+          var curve = Curves.easeInOutCubic; 
+          var tween = Tween(begin: const Offset(0.0, 0.05), end: Offset.zero).chain(CurveTween(curve: curve)); 
 
-          return FadeTransition( // Fade + Slide
+          return FadeTransition( 
             opacity: animation,
             child: SlideTransition(position: animation.drive(tween), child: child),
           );
         },
-        transitionDuration: const Duration(milliseconds: 1200), // Lambat 1.2 detik
+        transitionDuration: const Duration(milliseconds: 1000), // Durasi navigasi standar
       ),
     );
   }
@@ -251,9 +250,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    // Menggunakan RepaintBoundary pada background agar tidak digambar ulang setiap frame animasi teks/loading
     return Scaffold(
-      resizeToAvoidBottomInset: true, // Ubah jadi true agar UI naik saat keyboard muncul
+      resizeToAvoidBottomInset: true, 
       backgroundColor: Colors.white,
       body: Stack(
         children: [

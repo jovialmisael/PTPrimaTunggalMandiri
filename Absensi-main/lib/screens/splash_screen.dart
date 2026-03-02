@@ -24,21 +24,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    // Durasi animasi logo (2 detik cukup, jangan terlalu lama agar tidak membosankan)
+    // Durasi animasi dipercepat (1.2 detik)
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
-    // Fade In: Menggunakan easeInOut agar masuk dan keluarnya halus
+    // Fade In: Logo muncul perlahan
     _opacityAnimation = CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeInOut) 
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn) 
     );
 
-    // Scale halus: 0.95 ke 1.0 (Zoom in pelan)
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    // Scale: Efek zoom-out halus agar terlihat elegan (breathing effect)
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     _controller.forward();
@@ -48,7 +48,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // PRECACHE IMAGE: Mencegah lag saat pertama kali render gambar
     precacheImage(const AssetImage("lib/assets/logo-1024x544.png"), context);
   }
 
@@ -60,9 +59,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _startCheckSession() async {
     try {
-      // Jalankan logika paralel
+      // Tunggu animasi + proses cek sesi
       final List<dynamic> results = await Future.wait([
-        Future.delayed(const Duration(milliseconds: 2200)), // Sedikit buffer setelah animasi selesai
+        Future.delayed(const Duration(milliseconds: 2000)), // Tahan logo selama 2 detik total
         _getSessionData(),
       ]);
 
@@ -89,20 +88,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     }
   }
 
-  // --- TRANSISI HALUS ---
+  // --- TRANSISI HALUS (FADE) ---
   void _smoothNavigate(Widget page) {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        // Durasi transisi halaman (1.2 detik = Smooth tanpa terasa draggy)
-        transitionDuration: const Duration(milliseconds: 1200),
+        transitionDuration: const Duration(milliseconds: 1000), // Transisi 1 detik
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Fade Transition sederhana adalah yang paling ringan untuk GPU
+          // Hanya Fade, agar logo di LoginScreen (Hero) bisa menyambung sempurna
           return FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animation, 
-              curve: Curves.easeInOut, // Kurva standard yang paling mulus
-            ),
+            opacity: animation,
             child: child,
           );
         },
@@ -151,30 +146,20 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        // RepaintBoundary: KUNCI AGAR ANIMASI RINGAN (Cache GPU)
         child: RepaintBoundary(
           child: FadeTransition(
             opacity: _opacityAnimation,
             child: ScaleTransition(
               scale: _scaleAnimation,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    "lib/assets/logo-1024x544.png",
-                    width: 250,
-                    // Pastikan gaplessPlayback true agar tidak kedip saat reload
-                    gaplessPlayback: true, 
-                    errorBuilder: (ctx, err, stack) => const Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 30),
-                  // Loading Indicator Ringan
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(color: Color(0xFFE50000), strokeWidth: 2),
-                  ),
-                ],
+              // HANYA LOGO (Tanpa Loading Indicator)
+              child: Hero(
+                tag: 'app_logo', 
+                child: Image.asset(
+                  "lib/assets/logo-1024x544.png",
+                  width: 280, // Ukuran disesuaikan agar pas
+                  gaplessPlayback: true, 
+                  errorBuilder: (ctx, err, stack) => const SizedBox(),
+                ),
               ),
             ),
           ),

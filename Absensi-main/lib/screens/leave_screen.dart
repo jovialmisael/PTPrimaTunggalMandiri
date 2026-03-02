@@ -129,7 +129,10 @@ class _LeaveScreenState extends State<LeaveScreen> {
         return;
       }
     } else {
-      // ... validasi hourly ...
+      if (_permitDate == null || _startTime == null || _endTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tanggal dan Jam Izin wajib diisi")));
+        return;
+      }
     }
 
     showDialog(
@@ -178,14 +181,26 @@ class _LeaveScreenState extends State<LeaveScreen> {
             apiSisaCuti, 
           );
         } else {
-          // ... (createHourlyPdf code) ...
+          // Format Jam ke HH:mm
+          String startStr = '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}';
+          String endStr = '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}';
+          
+          await pdfService.createHourlyPdf(
+            apiName,
+            apiDivisi,
+            _permitDate!,
+            startStr,
+            endStr,
+            _isBackToWork,
+            _reasonController.text,
+          );
         }
 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal mengambil data profil.")));
       }
     } catch (e) {
-      // ... error handling ...
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal membuat PDF: $e")));
     }
   }
 
