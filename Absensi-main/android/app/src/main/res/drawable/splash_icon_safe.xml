@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 
+       Mengatur padding agar logo lebar (PTM) muat dalam lingkaran mask Android 12.
+       Padding vertikal (top/bottom) dibuat besar untuk memaksakan aspek rasio lebar
+       tetap berada di 'zona aman' lingkaran tengah.
+    -->
+    <item
+        android:drawable="@drawable/android12splash"
+        android:gravity="center"
+        android:top="48dp"
+        android:bottom="48dp"
+        android:left="24dp"
+        android:right="24dp" />
+</layer-list>

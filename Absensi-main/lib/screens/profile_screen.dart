@@ -104,33 +104,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  Future<void> _logout() async {
-    bool confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text("KONFIRMASI", style: TextStyle(color: _brandRed, fontWeight: FontWeight.bold)),
-        content: const Text("Apakah Anda yakin ingin keluar?", style: TextStyle(color: Colors.black87)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal", style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _brandRed, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("KELUAR"),
-          ),
-        ],
-      ),
-    ) ?? false;
-
-    if (confirm) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -336,28 +309,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               _buildInfoTile(Icons.calendar_today_rounded, "Bergabung", data['join_date'] ?? "-"),
 
                               const SizedBox(height: 35),
-
-                              // --- LOGOUT BUTTON ---
-                              Container(
-                                width: double.infinity,
-                                height: 55,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  gradient: LinearGradient(colors: [_brandRed, _brandBlue]),
-                                  boxShadow: [BoxShadow(color: _brandBlue.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-                                ),
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                  ),
-                                  onPressed: _logout,
-                                  icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                                  label: const Text("KELUAR APLIKASI", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white, letterSpacing: 1.0)),
-                                ),
-                              ),
-                              const SizedBox(height: 30),
                             ],
                           ),
                         );

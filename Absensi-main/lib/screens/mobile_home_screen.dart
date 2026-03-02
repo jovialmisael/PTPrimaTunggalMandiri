@@ -12,6 +12,8 @@ import 'visit_schedule_screen.dart';
 import 'profile_screen.dart';
 import 'add_store_screen.dart'; 
 import 'dart:math' as math; 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_screen.dart';
 
 class MobileHomeScreen extends StatefulWidget {
   final String token;
@@ -107,6 +109,33 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
       await Future.wait([_profileFuture, _attendanceFuture, _leaveFuture]);
     } catch (e) {
       debugPrint("Error refreshing data: $e");
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text("KONFIRMASI", style: TextStyle(color: _brandBlue, fontWeight: FontWeight.bold)),
+        content: const Text("Apakah Anda yakin ingin keluar?", style: TextStyle(color: Colors.black87)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal", style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _brandBlue, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("KELUAR"),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (confirm) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
     }
   }
 
@@ -373,6 +402,12 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                           ),
                         ),
                       ),
+                      // Logout Button
+                      IconButton(
+                        onPressed: _handleLogout,
+                        icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 24),
+                        tooltip: "Keluar Aplikasi",
+                      ),
                     ],
                   ),
                   
@@ -492,7 +527,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with SingleTickerPr
                   Container(width: 1, height: 40, color: Colors.grey[200]),
                   _buildStatItem("Total Hadir", hadir, "Hari", Icons.check_circle_rounded, Colors.green),
                   Container(width: 1, height: 40, color: Colors.grey[200]),
-                  _buildStatItem("Terlambat", terlambat, "Jam", Icons.timelapse_rounded, _brandBlue),
+                  _buildStatItem("Terlambat", terlambat, "Menit", Icons.timelapse_rounded, _brandBlue),
                 ],
               );
             }
